@@ -1247,8 +1247,8 @@ ngx_rtmp_init_listening(ngx_conf_t *cf, ngx_rtmp_conf_port_t *port)
 
             break;
         }
-        
-        if (ngx_clone_listening(cf, ls) != NGX_OK) {
+        //added '->cycle' by Edward.Wu to resolve the compiling error.
+        if (ngx_clone_listening(cf->cycle, ls) != NGX_OK) {
             return NGX_ERROR;
         }
 

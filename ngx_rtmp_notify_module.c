@@ -1078,6 +1078,11 @@ ngx_rtmp_notify_publish_handle(ngx_rtmp_session_t *s,
     target.host_mask = s->host_mask;
     target.service = s->service;
 
+    //added by Edward.Wu, tranfer the domain info to the relay connection
+    target.tc_url.data = s->tc_url.data;
+    target.tc_url.len = s->tc_url.len;
+
+
     if (ngx_parse_url(s->connection->pool, u) != NGX_OK) {
         ngx_log_error(NGX_LOG_INFO, s->connection->log, 0,
                       "notify: push failed '%V'", &local_name);
