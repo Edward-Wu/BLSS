@@ -95,6 +95,8 @@ cd to NGINX source directory & run this:
 ![Alt text](groups.png "wechat QR code")
 
 V1.0
+
 1.resove the compile error on MAC
+
 2.tranfer the tc_url to the relay session.
 
