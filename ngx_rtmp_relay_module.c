@@ -54,6 +54,8 @@ typedef struct {
     ngx_uint_t                  nbuckets;
     ngx_msec_t                  buflen;
     ngx_flag_t                  session_relay;
+    ngx_flag_t                  push_tcurl_relay;
+    ngx_flag_t                  pull_tcurl_relay;
     ngx_msec_t                  push_reconnect;
     ngx_msec_t                  pull_reconnect;
     ngx_rtmp_relay_ctx_t        **ctx;
@@ -121,6 +123,20 @@ static ngx_command_t  ngx_rtmp_relay_commands[] = {
       ngx_conf_set_flag_slot,
       NGX_RTMP_APP_CONF_OFFSET,
       offsetof(ngx_rtmp_relay_app_conf_t, session_relay),
+      NULL },
+
+    { ngx_string("push_tcurl_relay"),
+      NGX_RTMP_MAIN_CONF|NGX_RTMP_SRV_CONF|NGX_RTMP_SVI_CONF|NGX_RTMP_APP_CONF|NGX_CONF_TAKE1,
+      ngx_conf_set_flag_slot,
+      NGX_RTMP_APP_CONF_OFFSET,
+      offsetof(ngx_rtmp_relay_app_conf_t, push_tcurl_relay),
+      NULL },
+
+    { ngx_string("pull_tcurl_relay"),
+      NGX_RTMP_MAIN_CONF|NGX_RTMP_SRV_CONF|NGX_RTMP_SVI_CONF|NGX_RTMP_APP_CONF|NGX_CONF_TAKE1,
+      ngx_conf_set_flag_slot,
+      NGX_RTMP_APP_CONF_OFFSET,
+      offsetof(ngx_rtmp_relay_app_conf_t, pull_tcurl_relay),
       NULL },
 
 
@@ -192,6 +208,8 @@ ngx_rtmp_relay_create_app_conf(ngx_conf_t *cf)
     racf->log = &cf->cycle->new_log;
     racf->buflen = NGX_CONF_UNSET_MSEC;
     racf->session_relay = NGX_CONF_UNSET;
+    racf->push_tcurl_relay   = NGX_CONF_UNSET;
+    racf->pull_tcurl_relay   = NGX_CONF_UNSET;
     racf->push_reconnect = NGX_CONF_UNSET_MSEC;
     racf->pull_reconnect = NGX_CONF_UNSET_MSEC;
 
@@ -209,6 +227,8 @@ ngx_rtmp_relay_merge_app_conf(ngx_conf_t *cf, void *parent, void *child)
             * conf->nbuckets);
 
     ngx_conf_merge_value(conf->session_relay, prev->session_relay, 0);
+    ngx_conf_merge_value(conf->push_tcurl_relay, prev->push_tcurl_relay, 0);
+    ngx_conf_merge_value(conf->pull_tcurl_relay, prev->pull_tcurl_relay, 0);
     ngx_conf_merge_msec_value(conf->buflen, prev->buflen, 5000);
     ngx_conf_merge_msec_value(conf->push_reconnect, prev->push_reconnect,
             3000);
@@ -663,8 +683,8 @@ ngx_rtmp_relay_push(ngx_rtmp_session_t *s, ngx_str_t *name,
         ngx_rtmp_relay_target_t *target)
 {
     ngx_log_error(NGX_LOG_INFO, s->connection->log, 0,
-            "relay: create push name='%V' app='%V' playpath='%V' url='%V'",
-            name, &target->app, &target->play_path, &target->url.url);
+            "relay: create push name='%V' app='%V' playpath='%V' url='%V', tcurl='%V'",
+            name, &target->app, &target->play_path, &target->url.url, &target->tc_url);
 
     return ngx_rtmp_relay_create(s, name, target,
             ngx_rtmp_relay_create_local_ctx,
@@ -702,6 +722,12 @@ ngx_rtmp_relay_publish(ngx_rtmp_session_t *s, ngx_rtmp_publish_t *v)
             ngx_memcmp(name.data, target->name.data, name.len)))
         {
             continue;
+        }
+        
+        //added by Edward.Wu, for transfer the tc_url to relayer
+        if (racf->push_tcurl_relay) {
+            target->tc_url.data = s->tc_url.data;
+            target->tc_url.len = s->tc_url.len;
         }
 
         if (ngx_rtmp_relay_push(s, &name, target) == NGX_OK) {
@@ -756,6 +782,12 @@ ngx_rtmp_relay_play(ngx_rtmp_session_t *s, ngx_rtmp_play_t *v)
             continue;
         }
 
+        //added by Edward.Wu, for transfer the tc_url to relayer
+        if (racf->pull_tcurl_relay) {
+            target->tc_url.data = s->tc_url.data;
+            target->tc_url.len = s->tc_url.len;
+        }
+        
         if (ngx_rtmp_relay_pull(s, &name, target) == NGX_OK) {
             continue;
         }

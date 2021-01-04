@@ -100,3 +100,5 @@ V1.0
 
 2.tranfer the tc_url to the relay session.
 
+V1.1
+1.add push_tcurl_relay and pull_tcurl_relay transfer tcurl to the upstream server.
