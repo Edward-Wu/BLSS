@@ -139,8 +139,17 @@ ngx_rtmp_cmd_get_conf(ngx_rtmp_session_t *s, const char *func)
              s->host.data, s->host.len);
     if (hn == NULL || (hn->mask & s->host_mask) != s->host_mask) {
         ngx_log_error(NGX_LOG_INFO, s->connection->log, 0,
-                      "%s: service not found: '%V'", func, &s->host);
-        return NGX_ERROR;
+                      "%s: service '%V' not found, use the default service.", func, &s->host);
+        //added default service by Edward.Wu, to push and play stream with ip address or unknown hostname
+        //in conf file: hostname direct-bi proto-all "";
+		ngx_str_set(&s->host, "");
+        hn = ngx_hash_find_combined(hash, ngx_hash_key(s->host.data, s->host.len),
+                 s->host.data, s->host.len);
+        if (hn == NULL || (hn->mask & s->host_mask) != s->host_mask) {
+            ngx_log_error(NGX_LOG_INFO, s->connection->log, 0,
+                          "%s: service '%V' not match in the default service.", func, &s->host);
+            return NGX_ERROR;
+        }
     }
 
     /* found service */

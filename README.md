@@ -95,9 +95,7 @@ cd to NGINX source directory & run this:
 ![Alt text](groups.png "wechat QR code")
 
 # ReleaseNote
-
 V1.0
-
 1.resove the compile error on MAC
 
 2.tranfer the tc_url to the relay session.
@@ -105,3 +103,8 @@ V1.0
 V1.1
 
 1.add push_tcurl_relay and pull_tcurl_relay transfer tcurl to the upstream server.
+
+V1.2
+1.added default service by Edward.Wu, to push and play stream with ip address or unknown hostname.
+in conf file: hostname direct-bi proto-all "";
+		
