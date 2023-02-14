@@ -107,6 +107,7 @@ struct ngx_rtmp_exec_pull_ctx_s {
     ngx_uint_t                          counter;
     ngx_str_t                           name;
     ngx_str_t                           app;
+    ngx_str_t                           args; /* export the args in exec_pull directive*/
     ngx_array_t                         pull_exec;   /* ngx_rtmp_exec_t */
     ngx_rtmp_exec_pull_ctx_t           *next;
 };
@@ -359,6 +360,12 @@ static ngx_rtmp_eval_t ngx_rtmp_exec_pull_specific_eval[] = {
     { ngx_string("app"),
       ngx_rtmp_exec_eval_pctx_str,
       offsetof(ngx_rtmp_exec_pull_ctx_t, app) },
+
+    /* export the args in exec_pull directive*/
+	{ ngx_string("args"),
+	  ngx_rtmp_exec_eval_pctx_str,
+	  offsetof(ngx_rtmp_exec_pull_ctx_t, args) },
+
 
     ngx_rtmp_null_eval
 };
@@ -965,10 +972,10 @@ done:
     return NGX_OK;
 }
 
-
+ /* export the args in exec_pull directive */
 static ngx_int_t
 ngx_rtmp_exec_init_pull_ctx(ngx_rtmp_session_t *s,
-    u_char name[NGX_RTMP_MAX_NAME])
+    u_char name[NGX_RTMP_MAX_NAME], u_char args[NGX_RTMP_MAX_ARGS])
 {
     size_t                      len;
     ngx_uint_t                  n;
@@ -1038,6 +1045,18 @@ ngx_rtmp_exec_init_pull_ctx(ngx_rtmp_session_t *s,
     }
 
     ngx_memcpy(pctx->app.data, s->app.data, s->app.len);
+
+    /* export the args in exec_pull directive */
+    len = ngx_strlen(args);
+    pctx->args.len = len;
+    pctx->args.data = ngx_palloc(pool, len);
+
+    if (pctx->args.data == NULL) {
+        goto error;
+    }
+
+    ngx_memcpy(pctx->args.data, args, len);
+
 
     if (ngx_array_init(&pctx->pull_exec, pool, pull_conf->nelts,
                        sizeof(ngx_rtmp_exec_t)) != NGX_OK)
@@ -1213,8 +1232,9 @@ ngx_rtmp_exec_play(ngx_rtmp_session_t *s, ngx_rtmp_play_t *v)
     }
 
     ngx_rtmp_exec_unmanaged(s, &eacf->conf[NGX_RTMP_EXEC_PLAY], "play");
-
-    if (ngx_rtmp_exec_init_pull_ctx(s, v->name) != NGX_OK) {
+ 
+    /* export the args in exec_pull directive */
+    if (ngx_rtmp_exec_init_pull_ctx(s, v->name, v->args) != NGX_OK) {
         goto next;
     }
 
